@@ -1,0 +1,26 @@
+{
+  "name": "walkANDtalk3",
+  "version": "1.0.0",
+  "main": "chatserver.js",
+  "license": "MIT",
+  "scripts": {
+    "build-client-watch": "webpack -w",
+    "start": "nodemon server",
+    "start-dev": "yarn build-client-watch & yarn start"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "morgan": "^1.9.0",
+    "sse": "^0.0.6",
+    "ws": "^3.3.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "nodemon": "^1.12.1",
+    "webpack": "^3.8.1"
+  }
+}
