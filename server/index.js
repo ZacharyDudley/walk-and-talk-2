@@ -18,21 +18,22 @@ app.use(express.static('public'));
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
 
-const broadcast = () => {
-  let message = 'MESSAGE FOR YOU'
-  wss.clients.forEach(client => {
-    console.log('CLIENT: ', client.id)
-    client.send(message)
-  })
-}
+// const broadcast = () => {
+//   let message = 'MESSAGE FOR YOU'
+//   wss.clients.forEach(client => {
+//     console.log('CLIENT: ', client.id)
+//     client.send(message)
+//   })
+// }
 
 wss.on('connection', socket => {
-  console.log('CONNECTED: ', socket.id)
-  // console.log('CLIENTS: ', wss.clients)
-  broadcast()
+  console.log('CONNECTED: ')
+  socket.binaryType = 'arraybuffer'
 
   socket.on('message', message => {
-    console.log('RECEIVED: %s', message)
+    // const array = new Float32Array(message)
+    console.log('RECEIVED: ', message)
+
     socket.send(message)
   })
 
