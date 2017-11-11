@@ -13,9 +13,6 @@ let scriptNode = ac.createScriptProcessor(2048, 1, 1)
 let source = ac.createBufferSource()
 
 
-// let gn = ac.createGain()
-// gn.gain.value = 2
-
 scriptNode.onaudioprocess = audioProcessingEvent => {
   let inputBuffer = audioProcessingEvent.inputBuffer
   let outputBuffer = audioProcessingEvent.outputBuffer
