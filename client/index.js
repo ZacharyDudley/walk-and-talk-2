@@ -11,11 +11,15 @@ let clientID = 0
 let hasAddTrack = false;
 let pc
 
+const buttonInvite = document.getElementById('buttonInvite')
 const buttonConnect = document.getElementById('buttonConnect')
 const buttonDisconnect = document.getElementById('buttonDisconnect')
 const buttonTalk = document.getElementById('buttonTalk')
 const messageInputBox = document.getElementById('messageInputBox')
 const receiveBox = document.getElementById('receiveBox')
+
+buttonTalk.disabled = true
+buttonDisconnect.disabled = true
 
 let AudioContext = window.AudioContext || window.webkitAudioContext
 let ac = new AudioContext()
@@ -43,12 +47,22 @@ const connect = () => {
 
   connection.onopen = evnt => {
     buttonTalk.disabled = false
+    buttonConnect.disabled = true
+    buttonDisconnect.disabled = false
   }
 
   connection.onmessage = evnt => {
     let msg = JSON.parse(evnt.data)
 
     switch (msg.type) {
+      case 'id':
+        clientID = msg.id
+        break
+
+      case 'msg':
+        console.log('RECEIVED', msg)
+        break
+
       case 'offer':
         return handleOfferMsg(msg)
 
@@ -66,11 +80,27 @@ const connect = () => {
     }
   }
 }
+buttonConnect.onclick = connect
+
+const sendMsg = () => {
+  let msg = {
+    type: 'msg',
+    id: clientID
+  }
+  sendToServer(msg)
+}
+buttonTalk.onclick = sendMsg
 
 const createPeerConnection = () => {
   console.log('ESTABLISHING PEER CONNECTION')
 
-  pc = new RTCPeerConnection()
+  pc = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: 'stun:stun.l.google.com:19302'
+      }
+    ]
+  })
 
   hasAddTrack = pc.addTrack !== undefined
 
@@ -89,10 +119,13 @@ const createPeerConnection = () => {
 }
 
 const handleNegotiationNeededEvent = () => {
+  console.log('CREATING OFFER')
+
   pc.createOffer()
     .then(offer => (pc.setLocalDescription(offer)))
     .then(() => {
       sendToServer({
+        id: clientID,
         type: 'offer',
         sdp: pc.localDescription
       })
@@ -113,8 +146,10 @@ const handleRemoveStreamEvent = evnt => {
 }
 
 const handleICECandidateEvent = evnt => {
+  console.log('HANDLE ICE CANDIDATE EVENT')
   if (evnt.candidate) {
     sendToServer({
+      id: clientID,
       type: 'candidate',
       candidate: evnt.candidate
     })
@@ -143,7 +178,7 @@ const handleSignalingStateChangeEvent = evnt => {
 }
 
 const handleICEGatheringStateChangeEvent = evnt => {
-  console.log('ICE GATHERING')
+  console.log('ICE GATHERING STATE CHANGE')
 }
 
 const endConnection = () => {
@@ -172,8 +207,12 @@ const endConnection = () => {
 
     pc.close()
     pc = null
+
+    buttonConnect.disabled = false
+    buttonInvite.disabled = false
   }
 }
+buttonDisconnect.onclick = endConnection
 
 const handleHangUpMsg = msg => {
   endConnection()
@@ -182,6 +221,7 @@ const handleHangUpMsg = msg => {
 const endCall = () => {
   endConnection()
   sendToServer({
+    id: clientID,
     type: 'hangUp'
   })
 }
@@ -201,8 +241,14 @@ const invite = evnt => {
         }
       })
       .catch(handleGetUserMediaError)
+
+      buttonInvite.disabled = true
+      console.log('INVITING', pc.id)
+  } else {
+    console.log('ALREADY: ', pc)
   }
 }
+buttonInvite.onclick = invite
 
 const handleOfferMsg = msg => {
   let localStream = null
@@ -228,17 +274,21 @@ const handleOfferMsg = msg => {
     .then(answer => pc.setLocalDescription(answer))
     .then(() => {
       sendToServer({
+        id: clientID,
         type: 'answer',
         sdp: pc.localDescription
       })
     })
     .catch(handleGetUserMediaError)
+
+    console.log('WAS OFFERED BY: ', pc.id)
 }
 
 const handleAnswerMsg = msg => {
   let desc = new RTCSessionDescription(msg.sdp)
   pc.setRemoteDescription(desc)
-    .catch(err => console.error(err))
+  .catch(err => console.error(err))
+  console.log('ANSWERED: ', pc.id)
 }
 
 const handleCandidateMsg = msg => {
@@ -246,6 +296,8 @@ const handleCandidateMsg = msg => {
 
   pc.addIceCandidate(candidate)
     .catch(err => console.error(err))
+
+  buttonInvite.disabled = true
 }
 
 const handleGetUserMediaError = err => {
@@ -344,37 +396,38 @@ const onSuccess = stream => {
     }
   }
 
-  mediaRecorder.sendData = buffer => {
-    let blob = new Blob(buffer, {type: 'audio/wav'})
-    console.log('BLOB', blob)
-    socket.send(blob)
-  }
+  // mediaRecorder.sendData = buffer => {
+  //   let blob = new Blob(buffer, {type: 'audio/wav'})
+  //   console.log('BLOB', blob)
+  //   socket.send(blob)
+  // }
 }
 
-socket.onopen = () => {
-  console.log('CLIENT OPEN')
+// socket.onopen = () => {
+//   console.log('CLIENT OPEN')
 
-  source.connect(scriptNode)
-  scriptNode.connect(ac.destination)
+//   source.connect(scriptNode)
+//   scriptNode.connect(ac.destination)
 
-  navigator.mediaDevices.getUserMedia({audio: true})
-  .then(res => onSuccess(res))
-  .catch(err => console.error('ERROR: ', err))
-}
+//   navigator.mediaDevices.getUserMedia({audio: true})
+//   .then(res => onSuccess(res))
+//   .catch(err => console.error('ERROR: ', err))
+// }
 
-socket.onmessage = evnt => {
-  ac.decodeAudioData(evnt.data, buffer => {
-    console.log(buffer)
-    let myBuffer = buffer
-    source.buffer = myBuffer
-    source.start()
-  })
-}
+// socket.onmessage = evnt => {
+//   ac.decodeAudioData(evnt.data, buffer => {
+//     console.log(buffer)
+//     let myBuffer = buffer
+//     source.buffer = myBuffer
+//     source.start()
+//   })
+// }
 
 
-window.addEventListener('beforeunload', () => {
-  socket.close()
-})
+// window.addEventListener('beforeunload', () => {
+//   socket.close()
+// })
+
 // /*  ---------------------------------------  */
 // /*  HOLD 'z' TO TALK  */
 // window.addEventListener('keydown', event => {
