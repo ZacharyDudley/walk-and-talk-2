@@ -15,11 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static('public'));
 
-// app.use((req, res) => {
-//   res.send({msg: 'hi'})
-// })
-
-const connectionArray = []
+let connectionArray = []
 let nextID = Date.now()
 
 const server = http.createServer(app)
@@ -28,53 +24,15 @@ server.listen(3000, () => {
   console.log('LISTENING ON %d', server.address().port)
 })
 
-// const server = http.createServer( (req, res) => {
-//   res.writeHead(404)
-//   res.end()
-// })
-
-// server.listen(3000, () => {
-//   console.log('LISTENING ON %d', server.address().port)
-// })
-
-// const wss = new WebSocketServer({
-//   httpServer: server
-// })
-
-
-// const broadcast = () => {
-//   let message = 'MESSAGE FOR YOU'
-//   wss.clients.forEach(client => {
-//     console.log('CLIENT: ', client.id)
-//     client.send(message)
-//   })
-// }
-
-// wss.on('connection', socket => {
-//   console.log('CONNECTED: ')
-//   socket.binaryType = 'arraybuffer'
-
-//   socket.on('message', message => {
-//     // const array = new Float32Array(message)
-//     console.log('RECEIVED: ', message)
-
-//     socket.send(message)
-//   })
-// })
-
-// const send = msg => {
-//   connection.sendUTF(msg)
-// }
-
-wss.on('request', connection => {
-  console.log('REQUEST')
-})
 
 wss.on('connection', (connection, req) => {
   connectionArray.push(connection)
   connection.clientID = nextID
   nextID++
-  console.log('CONNECTED: ', connection.clientID)
+
+  connectionArray.forEach(client => {
+    console.log('CONNECTED: ', client.clientID)
+  })
 
   let idMsg = {
     type: 'id',
@@ -105,8 +63,9 @@ wss.on('connection', (connection, req) => {
   })
 
   connection.on('close', (reason, description) => {
-    connectionArray.filter(function(el, idx, ar) {
-      return el.connected;
+    connectionArray = connectionArray.filter(client => {
+      console.log(client.connected)
+      return client.connected;
     });
 
     console.log(connectionArray.length)

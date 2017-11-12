@@ -1,8 +1,5 @@
 'use strict'
 
-// const socket = new WebSocket('ws://localhost:3000/')
-// socket.binaryType = 'arraybuffer'
-
 let myHostname = window.location.hostname;
 console.log('Hostname: ' + myHostname);
 
@@ -21,10 +18,10 @@ const receiveBox = document.getElementById('receiveBox')
 buttonTalk.disabled = true
 buttonDisconnect.disabled = true
 
-let AudioContext = window.AudioContext || window.webkitAudioContext
-let ac = new AudioContext()
-let scriptNode = ac.createScriptProcessor(2048, 1, 1)
-let source = ac.createBufferSource()
+// let AudioContext = window.AudioContext || window.webkitAudioContext
+// let ac = new AudioContext()
+// let scriptNode = ac.createScriptProcessor(2048, 1, 1)
+// let source = ac.createBufferSource()
 
 
 const localAudio = document.getElementById('localAudio')
@@ -134,10 +131,12 @@ const handleNegotiationNeededEvent = () => {
 }
 
 const handleTrackEvent = evnt => {
+  console.log('HANDLE TRACK')
   localAudio.srcObject = evnt.streams[0]
 }
 
 const handleAddStreamEvent = evnt => {
+  console.log('HANDLE STREAM')
   localAudio.srcObject = evnt.stream
 }
 
@@ -183,33 +182,27 @@ const handleICEGatheringStateChangeEvent = evnt => {
 
 const endConnection = () => {
   if (pc) {
-    pc.onaddstream = null;  // For older implementations
-    pc.ontrack = null;      // For newer ones
-    pc.onremovestream = null;
-    pc.onnicecandidate = null;
-    pc.oniceconnectionstatechange = null;
-    pc.onsignalingstatechange = null;
-    pc.onicegatheringstatechange = null;
-    pc.onnotificationneeded = null;
-
-    // if (remoteVideo.srcObject) {
-    //   remoteVideo.srcObject.getTracks().forEach(track => track.stop())
-    // }
+    pc.onaddstream = null
+    pc.ontrack = null
+    pc.onremovestream = null
+    pc.onnicecandidate = null
+    pc.oniceconnectionstatechange = null
+    pc.onsignalingstatechange = null
+    pc.onicegatheringstatechange = null
+    pc.onnotificationneeded = null
 
     if (localAudio.srcObject) {
       localAudio.srcObject.getTracks().forEach(track => track.stop())
     }
 
-    // remoteVideo.src = null;
     localAudio.src = null
-
-    // Close the peer connection
 
     pc.close()
     pc = null
 
     buttonConnect.disabled = false
     buttonInvite.disabled = false
+    buttonDisconnect.disabled = true
   }
 }
 buttonDisconnect.onclick = endConnection
@@ -287,7 +280,7 @@ const handleOfferMsg = msg => {
 const handleAnswerMsg = msg => {
   let desc = new RTCSessionDescription(msg.sdp)
   pc.setRemoteDescription(desc)
-  .catch(err => console.error(err))
+    .catch(err => console.error(err))
   console.log('ANSWERED: ', pc.id)
 }
 
@@ -322,86 +315,67 @@ const handleGetUserMediaError = err => {
 }
 
 
+// scriptNode.onaudioprocess = audioProcessingEvent => {
+//   let inputBuffer = audioProcessingEvent.inputBuffer
+//   let outputBuffer = audioProcessingEvent.outputBuffer
 
+//   for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+//     var inputData = inputBuffer.getChannelData(channel)
+//     var outputData = outputBuffer.getChannelData(channel)
 
-scriptNode.onaudioprocess = audioProcessingEvent => {
-  let inputBuffer = audioProcessingEvent.inputBuffer
-  let outputBuffer = audioProcessingEvent.outputBuffer
-
-  for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
-    var inputData = inputBuffer.getChannelData(channel)
-    var outputData = outputBuffer.getChannelData(channel)
-
-    for (var sample = 0; sample < inputBuffer.length; sample++) {
-      outputData[sample] = inputData[sample]
-    }
-  }
-}
-
-// let signalingChannel = createSignalingChannel()
-// const start = isCaller => {
-//   // CREATE PEER CONNECTION
-
-//   pc.onicecandidate = evnt => {
-//     if (evnt.candidate) {
-//       // new RTCIceCandidate(evnt.candidate)
-
+//     for (var sample = 0; sample < inputBuffer.length; sample++) {
+//       outputData[sample] = inputData[sample]
 //     }
-//   //   signalingChannel.send(JSON.stringify({ candidate: evnt.candidate }))
-//   }
-
-//   pc.onaddstream = evnt => {
-//     // GET REMOTE STREAM AND PLAY IT
-//     localAudio.src = URL.createObjectURL(evnt.stream)
 //   }
 // }
 
-const onSuccess = stream => {
-  pc = new RTCPeerConnection()
-  pc.addStream(stream)
-  // localAudio.srcObject = stream
 
-  let chunks = []
-  let mediaRecorder = new MediaRecorder(stream)
+// const onSuccess = stream => {
+//   pc = new RTCPeerConnection()
+//   pc.addStream(stream)
+//   // localAudio.srcObject = stream
+
+//   let chunks = []
+//   let mediaRecorder = new MediaRecorder(stream)
 
   /*  ---------------------------------------  */
   /*  HOLD 'z' TO TALK  */
-  window.addEventListener('keydown', event => {
-    if (event.keyCode === 90 && mediaRecorder.state !== 'recording') {
-      mediaRecorder.start()
-    }
-  })
-  window.addEventListener('keyup', event => {
-    if (event.keyCode === 90) {
-      mediaRecorder.stop()
-    }
-  })
-  document.addEventListener('mousedown', event => {
-    if (event.target === buttonTalk && mediaRecorder.state !== 'recording') {
-      mediaRecorder.start()
-    }
-  })
-  document.addEventListener('mouseup', event => {
-    if (mediaRecorder.state === 'recording') {
-      mediaRecorder.stop()
-    }
-  })
+  // window.addEventListener('keydown', event => {
+  //   if (event.keyCode === 90 && mediaRecorder.state !== 'recording') {
+  //     mediaRecorder.start()
+  //   }
+  // })
+  // window.addEventListener('keyup', event => {
+  //   if (event.keyCode === 90) {
+  //     mediaRecorder.stop()
+  //   }
+  // })
+  // document.addEventListener('mousedown', event => {
+  //   if (event.target === buttonTalk && mediaRecorder.state !== 'recording') {
+  //     mediaRecorder.start()
+  //   }
+  // })
+  // document.addEventListener('mouseup', event => {
+  //   if (mediaRecorder.state === 'recording') {
+  //     mediaRecorder.stop()
+  //   }
+  // })
   /*  ---------------------------------------  */
 
-  mediaRecorder.ondataavailable = evnt => {
-    chunks.push(evnt.data)
-    if (chunks) {
-      mediaRecorder.sendData(chunks)
-      chunks = []
-    }
-  }
+  // mediaRecorder.ondataavailable = evnt => {
+  //   chunks.push(evnt.data)
+  //   if (chunks) {
+  //     mediaRecorder.sendData(chunks)
+  //     chunks = []
+  //   }
+  // }
 
   // mediaRecorder.sendData = buffer => {
   //   let blob = new Blob(buffer, {type: 'audio/wav'})
   //   console.log('BLOB', blob)
   //   socket.send(blob)
   // }
-}
+// }
 
 // socket.onopen = () => {
 //   console.log('CLIENT OPEN')
@@ -453,4 +427,3 @@ const onSuccess = stream => {
 //   }
 // })
 // /*  ---------------------------------------  */
-
