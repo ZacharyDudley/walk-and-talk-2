@@ -1,14 +1,15 @@
 'use strict'
 
-const express = require('express');
-const app = express();
+const express = require('express')
+const app = express()
+const fs = require('fs')
 const http = require('http')
-// const https = require('https')
+const https = require('https')
 const url = require('url')
 const WebSocket = require('ws')
 // const WebSocketServer = require('websocket').server
-const morgan = require('morgan');
-const bodyParser = require('body-parser');
+const morgan = require('morgan')
+const bodyParser = require('body-parser')
 
 app.use(morgan('dev'));
 app.use(bodyParser.json());
@@ -18,6 +19,12 @@ app.use(express.static('public'));
 let connectionArray = []
 let nextID = Date.now()
 
+let httpsOptions = {
+  key: fs.readFileSync('private.key'),
+  cert: fs.readFileSync('mydomain.csr')
+}
+
+// let server = https.createServer(httpsOptions, app)
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
 server.listen(3000, () => {
